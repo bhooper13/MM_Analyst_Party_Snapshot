@@ -1,3 +1,5 @@
-altair
-pandas
+networkx
 streamlit
+matplotlib
+mpld3
+python-pptx
