@@ -160,19 +160,18 @@ def draw_graph_with_highlighted_node(graph, node_ids, highlight_color='red', nod
 
 def create_network_graph(G, display_legend=True, layout='Spring'):
 
-    match layout:
-        case 'Kamada':
-            pos = nx.kamada_kawai_layout(G)
-        case 'Shell':
-            pos = nx.shell_layout(G)
-        case 'Spring':
-            pos = nx.spring_layout(G, k=.2, iterations=20, seed=42)
-        case 'Circular':
-            pos = nx.circular_layout(G)
-        # case 'Spectral':
-        #     pos = nx.spectral_layout(G)
-        case 'Random':
-            pos = nx.random_layout(G)
+    if layout == 'Kamada':
+        pos = nx.kamada_kawai_layout(G)
+    if layout == 'Shell':
+        pos = nx.shell_layout(G)
+    if layout == 'Spring':
+        pos = nx.spring_layout(G, k=.2, iterations=20, seed=42)
+    if layout =='Circular':
+        pos = nx.circular_layout(G)
+    # case 'Spectral':
+    #     pos = nx.spectral_layout(G)
+    if layout == 'Random':
+        pos = nx.random_layout(G)
 
     edge_x = []
     edge_y = []
