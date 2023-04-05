@@ -49,9 +49,31 @@ df = df.drop(columns=['timestamp','from_date',
                       'observationtime',
                       'datetime',
                       'filing_date'])
+df =df.astype(str)
 
+def synthetic_to_graph(df):
+    G = nx.Graph()
+    for i, row in df.iterrows():
+        if row['table_type'] == 'node':
+            attributes = {}
+            for col in df.columns:
+                if pd.notna(row[col]) and row[col] != '' and row[col]!='nan'and row[col]!='NaT':
+                    attributes[col] = row[col]
+            del attributes['table_type']
+            G.add_node(row['guid'], **attributes)
+        elif row['table_type'] == 'edge':
+            attributes = {}
+            for col in df.columns:
+                if pd.notna(row[col]) and row[col] != '' and row[col]!='nan'and row[col]!='NaT':
+                    attributes[col] = row[col]
+            del attributes['table_type']
+            del attributes['from_id']
+            del attributes['to_id']
+            G.add_edge(row['from_id'], row['to_id'], **attributes)
+    return G
 #cast all columns as string
 # df = df.astype(str)
-G, node_attributes = synthetic_to_graph(df)
+G = synthetic_to_graph(df)
 nx.write_gml(G, "synthetic_mm.gml")
+
 

@@ -4,6 +4,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import mpld3
 import streamlit.components.v1 as components
+import  streamlit_toggle as tog
+import mplcursors
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -20,12 +22,13 @@ val_map = {'cryptocurrency_address': 0,
 'electronic_address':.7,
 'identification':.8,
 'name':.9,
-'phone_number':1
-# 'account':,
-# 'activity':,
-# 'cargo':,
-# 'vessel':,
+'phone_number':1,
+'account': 1.1,
+'activity': 1.2,
+'cargo':1.3,
+'vessel':1.4
 }
+val_map={'account': 0.03, 'activity': 0.06846153846153846, 'additional_information': 0.10692307692307693, 'address': 0.1453846153846154, 'aircraft': 0.18384615384615385, 'cargo': 0.22230769230769232, 'container': 0.26076923076923075, 'cryptocurrency_address': 0.2992307692307693, 'cryptocurrency_cluster': 0.33769230769230774, 'electronic_address': 0.37615384615384617, 'identification': 0.4146153846153846, 'intellectual_property': 0.45307692307692315, 'ip_address': 0.4915384615384616, 'legal_matter': 0.53, 'location': 0.5684615384615386, 'name': 0.606923076923077, 'party': 0.6453846153846154, 'party_identification': 0.6838461538461539, 'phone_number': 0.7223076923076923, 'property': 0.7607692307692309, 'risk_factor': 0.7992307692307693, 'sanction': 0.8376923076923077, 'security': 0.8761538461538463, 'shipment': 0.9146153846153847, 'tradename': 0.9530769230769232, 'vessel': 0.9915384615384616}
 
 #todo make a function that takes in a name and returns a node id and replace character name references with it
 
@@ -235,24 +238,64 @@ st.title("Mortal Mint Network Graph Query")
 
 # Get user input for character name
 search_name = st.text_input("Enter the name of a entity to search:", value ="")
-
+show_legend=tog.st_toggle_switch(label="Toggle Legend",
+                    key="Key1",
+                    default_value=True,
+                    label_after = False,
+                    inactive_color = '#D3D3D3',
+                    active_color="#11567f",
+                    track_color="#29B5E8"
+                    )
+# Use the viridis colormap
+viridis_cmap = plt.cm.get_cmap('viridis')
+layout_option = st.selectbox('Layout for network graphs:', ('Kamada', 'Shell', 'Spring'))
 #draw the full graph if no character name is entered
 if search_name== '':
     # Draw the network graph of the input character and its connections
     color_map = [val_map.get(attributes['table'], 0.25) for node, attributes in G.nodes(data=True)]
-
-    #dictionary with nodes as keys and table as the value
+    #
+    # #dictionary with nodes as keys and table as the value
     node_table_labels = {node: attributes['table'] for node, attributes in G.nodes(data=True)}
+    #
+    # # pos = nx.spring_layout(G, k=.40, iterations=20, seed=42)
+    match layout_option:
+        case 'Kamada':
+            pos = nx.kamada_kawai_layout(G)
+        case 'Shell':
+            pos = nx.shell_layout(G)
+        case 'Spring':
+            pos = nx.spring_layout(G, k=.40, iterations=20, seed=42)
 
-    # pos = nx.spring_layout(G, k=.40, iterations=20, seed=42)
-    pos = nx.kamada_kawai_layout(G)
-    fig, ax = plt.subplots(figsize=(8, 8))
-    nx.draw(G, pos=pos, ax=ax, with_labels=True, labels = node_table_labels, font_size=8, cmap=plt.get_cmap('viridis'),
+    # fig, ax = plt.subplots(figsize=(8, 8))
+    # nx.draw(G, pos=pos, ax=ax, with_labels=True, labels = node_table_labels, font_size=8, cmap=plt.get_cmap('viridis'),
+    #         node_color=color_map, edge_color='gray')
+    # ax.set_title(f"Full Network Graph")
+    # fig_html = mpld3.fig_to_html(fig, figid = 'fig1')
+    # components.html(fig_html, height=1000, width=1000)
+
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    nx.draw(G, pos=pos, ax=ax, with_labels=True, labels=node_table_labels, font_size=8, cmap=plt.get_cmap('viridis'),
             node_color=color_map, edge_color='gray')
+    # cursor = mplcursors.cursor(ax, hover=True)
+    #
+    #
+    # @cursor.connect("add")
+    # def on_add(sel):
+    #     node_index = sel.target.index
+    #     node_attributes = G.nodes[node_index]
+    #     sel.annotation.set_text(f"{node_attributes}")
+
+    if show_legend:
+        for key, value in val_map.items():
+            plt.scatter([], [], c=[viridis_cmap(value)], label=key)
+    ax.legend(loc='upper left', frameon=False, edgecolor='none',fontsize=6)
     ax.set_title(f"Full Network Graph")
-    fig_html = mpld3.fig_to_html(fig, figid = 'fig1')
+    fig_html = mpld3.fig_to_html(fig, figid='fig1')
     components.html(fig_html, height=1000, width=1000)
     # st.pyplot(fig)
+
     st.stop()
 
 if search_name != "":

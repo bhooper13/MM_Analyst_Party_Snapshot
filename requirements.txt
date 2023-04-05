@@ -1,6 +1,0 @@
-networkx
-streamlit
-matplotlib
-mpld3
-python-pptx
-scipy
