@@ -4,6 +4,7 @@ import matplotlib as plt
 import plotly.graph_objects as go
 import plotly.express as px
 import streamlit as st
+from collections import deque
 
 def get_unique_attribute_names(G):
     """
@@ -131,6 +132,35 @@ def get_search_result_subgraph(graph, string_to_search_for, n):
     else:
         st.write("No results found for '{}'. Displaying full graph".format(string_to_search_for))
         return graph
+
+def queue(a, b, qty):
+    """either x0 and x1 or y0 and y1, qty of points to create"""
+    q = deque()
+    q.append((0, qty - 1))  # indexing starts at 0
+    pts = [0] * qty
+    pts[0] = a
+    pts[-1] = b  # x0 is the first value, x1 is the last
+    while len(q) != 0:
+        left, right = q.popleft()  # remove working segment from queue
+        center = (left + right + 1) // 2  # creates index values for pts
+        pts[center] = (pts[left] + pts[right]) / 2
+        if right - left > 2:  # stop when qty met
+            q.append((left, center))
+            q.append((center, right))
+    return pts
+
+
+def make_middle_points(first_x, last_x, first_y, last_y, qty):
+    """line segment end points, how many midpoints, hovertext"""
+    # Add 2 because the origin will be in the list, pop first and last (the nodes)
+    middle_x_ = queue(first_x, last_x, qty + 2)
+    middle_y_ = queue(first_y, last_y, qty + 2)
+    middle_x_.pop(0)
+    middle_x_.pop()
+    middle_y_.pop(0)
+    middle_y_.pop()
+    return middle_x_, middle_y_
+
 def draw_graph_with_highlighted_node(graph, node_ids, highlight_color='red', node_size=40):
     """
     Draw a NetworkX graph with a highlighted node.
@@ -168,37 +198,94 @@ def create_network_graph(G, display_legend=True, layout='Spring'):
         pos = nx.spring_layout(G, k=.2, iterations=20, seed=42)
     if layout =='Circular':
         pos = nx.circular_layout(G)
-    # case 'Spectral':
-    #     pos = nx.spectral_layout(G)
     if layout == 'Random':
         pos = nx.random_layout(G)
 
+    EDGE_POINTS_QUANTITY = 10
+    EDGE_POINTS_OPACITY = 0
     edge_x = []
     edge_y = []
+    edge_middle_y = []
+    edge_middle_x = []
+    edge_middle_text = []
+
     for edge in G.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y, line=dict(width=1, color='#888'), hoverinfo='none', mode='lines'
-    )
+        # the 3 is points per line; x0 at the end is for hovertext
+        middle_x, middle_y = make_middle_points(x0, x1, y0, y1, EDGE_POINTS_QUANTITY)
+        edge_middle_x.extend(middle_x)
+        edge_middle_y.extend(middle_y)
 
+        # edge_middle_text.extend([f"EDGE{idx0}{idx1}"] * EDGE_POINTS_QUANTITY)
+        #adds hover text to the edges
+        edge_middle_text.extend(['<br>'.join(f'{key}: {value}' for key, value in G.edges[edge].items())]
+                                * EDGE_POINTS_QUANTITY)
+
+    # edge_labels = ['<br>'.join(f'{key}: {value}' for key, value in G.edges[edge].items()) for edge in G.edges()]
+
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y, line=dict(width=1, color='#888'), hovertemplate='%{text}',mode='lines')
+
+    # for trace in edge_trace.data:
+    #     trace.update(
+    #         # dict(mode='lines', marker=dict(size=10, line_width=2),
+    #                       hovertemplate='%{text}')
+
+    #made the edges have hover text
+    m2node_trace = go.Scatter(x=edge_middle_x, y=edge_middle_y, mode="markers", showlegend=False,
+                              hovertemplate="%{hovertext}",
+                              hovertext=edge_middle_text,
+                              marker=go.Marker(opacity=EDGE_POINTS_OPACITY))
     node_x = [pos[node][0] for node in G.nodes()]
     node_y = [pos[node][1] for node in G.nodes()]
     node_labels = ['<br>'.join(f'{key}: {value}' for key, value in G.nodes[node].items()) for node in G.nodes()]
     node_tables = [G.nodes[node]["table"] for node in G.nodes()]
 
+    #determines what color to use for each node when displaying the network graph
+    color_map = {
+        'account': px.colors.qualitative.D3[0],
+        'activity': px.colors.qualitative.D3[1],
+        'additional_information': px.colors.qualitative.D3[2],
+        'address': px.colors.qualitative.D3[3],
+        'aircraft': px.colors.qualitative.D3[4],
+        'cargo': px.colors.qualitative.D3[5],
+        'container': px.colors.qualitative.D3[6],
+        'cryptocurrency_address': px.colors.qualitative.D3[7],
+        'cryptocurrency_cluster': px.colors.qualitative.D3[8],
+        'electronic_address': px.colors.qualitative.D3[9],
+        'identification': px.colors.qualitative.T10[2],
+        'intellectual_property': px.colors.qualitative.T10[3],
+        'ip_address': px.colors.qualitative.Plotly[0],
+        'legal_matter': px.colors.qualitative.Plotly[1],
+        'location': px.colors.qualitative.Plotly[2],
+        'name': px.colors.qualitative.Plotly[3],
+        'party': px.colors.qualitative.Plotly[4],
+        'party_identification': px.colors.qualitative.Plotly[5],
+        'phone_number': px.colors.qualitative.Plotly[6],
+        'property': px.colors.qualitative.Plotly[7],
+        'risk_factor': px.colors.qualitative.Plotly[8],
+        'sanction': px.colors.qualitative.Plotly[9],
+        'security': px.colors.qualitative.T10[4],
+        'shipment': px.colors.qualitative.T10[5],
+        'tradename': px.colors.qualitative.T10[0],
+        'vessel': px.colors.qualitative.T10[1],
+        'osints':px.colors.qualitative.T10[6]
+    }
+
     node_trace = px.scatter(x=node_x, y=node_y,
                             text=node_labels,
                             color=node_tables,
-                                color_discrete_sequence=px.colors.qualitative.D3)
+                            # color_discrete_sequence=px.colors.qualitative.D3,
+                            color_discrete_map=color_map)
 
     for trace in node_trace.data:
         trace.update(dict(mode='markers', marker=dict(size=10, line_width=2), hovertemplate='%{text}'))
 
-    fig = go.Figure(data=[edge_trace] + list(node_trace.data),
+    fig = go.Figure(data=[edge_trace, m2node_trace] + list(node_trace.data),
                     layout=go.Layout(
                         showlegend=display_legend,
                         hovermode='closest',

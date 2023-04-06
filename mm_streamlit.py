@@ -31,14 +31,13 @@ show_legend=tog.st_toggle_switch(label="Toggle Legend",
                     track_color="#29B5E8"
                     )
 # Use the viridis colormap
-viridis_cmap = plt.cm.get_cmap('viridis')
+viridis_cmap = plt.colormaps.get_cmap('viridis')
 layout_option = st.sidebar.selectbox('Layout for network graphs:', ('Kamada', 'Shell', 'Spring',
                                                                     'Circular', 'Random'))
 
-
 #load sythetic gml file
 G = nx.read_gml('synthetic_mm.gml')
-color_map = [val_map.get(attributes['table'], 0.25) for node, attributes in G.nodes(data=True)]
+# color_map = [val_map.get(attributes['table'], 0.25) for node, attributes in G.nodes(data=True)]
 
 if search_value != '':
     number_of_edges = st.sidebar.slider('Number of edges to show:', 1, 10, 2)
