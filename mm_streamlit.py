@@ -89,6 +89,7 @@ if search_value:
     # Create a 3 x 3 grid using beta_columns
     cols = [st.columns(3) for _ in range(3)]
 
+
     # Display the attribute data in the grid
     for i, attribute in enumerate(attributes):
         row = i // 3
