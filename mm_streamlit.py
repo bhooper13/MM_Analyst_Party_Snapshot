@@ -7,7 +7,7 @@ import time
 import network_utilities as nx_util
 import ppt_utilities as ppt_util
 import plotly.io as pio
-
+import os
 import streamlit_toggle as tog
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -63,7 +63,7 @@ if st.button("Export Results to PowerPoint"):
     # ppt_util.close_specific_ppt_file(f"{search_value}_mortal_mint_snapshot.pptx")
     # time.sleep(1)
     ppt_util.export_to_powerpoint(G, search_value)
-
+    st.write(os.listdir("."))
 
 if search_value:
     if len(node_search_results_list)>1:
