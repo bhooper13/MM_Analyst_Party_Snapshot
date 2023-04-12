@@ -84,6 +84,17 @@ def get_attr_dict(G, attr_name):
 #             attr_value = attrs[attr_name]
             attr_dict[node_id] = {'raw_source': attrs['raw_source'], attr_name: attrs[attr_name]}
     return attr_dict
+def get_attribute_values(graph, attribute_name):
+    """
+    Given a networkx graph and an attribute name, this function returns a list of all values of the
+    specified attribute for each node in the graph.
+
+    :param graph: networkx graph
+    :param attribute_name: string, name of the attribute to collect values for
+    :return: list of attribute values
+    """
+    attribute_values = [data[attribute_name] for _, data in graph.nodes(data=True) if attribute_name in data]
+    return attribute_values
 
 def display_data(node_data, display_node_id = True, display_source = True):
     """
@@ -118,20 +129,51 @@ def display_attribute_data(G, attribute_name, display_node_id=True, display_sour
     :return:
     """
     attr_dict = get_attr_dict(G, attribute_name)
+    if attr_dict:
+        st.markdown(f"**{attribute_name.title()} Data**")
+        # st.write(f"Displaying data for attribute: {attribute_name.title()}")
+        display_data(attr_dict, display_node_id=display_node_id, display_source=display_source)
+        st.markdown("##")
+    else:
+        st.markdown(f"**No data for {attribute_name.title()}**")
 
-    st.markdown(f"**{attribute_name.title()} Data**")
-    # st.write(f"Displaying data for attribute: {attribute_name.title()}")
-    display_data(attr_dict, display_node_id=display_node_id, display_source=display_source)
-    st.markdown("##")
+def split_graph_by_distance(graph, node_id, number_of_edges=3):
+    """
+    Given a node id and a graph, this function returns two graph objects:
+    - one graph object with nodes connected 1 edge away from the given node_id
+    - a second graph object with nodes connected 2 to 5 edges away from the given node_id
+
+    :param graph: A NetworkX graph object
+    :param node_id: The node id for which the graph objects need to be created
+    :return: A tuple containing the two graph objects (one_edge_away, two_to_five_edges_away)
+    """
+
+    # Initialize the two graph objects
+    one_edge_away = nx.Graph()
+    two_to_n_edges_away = nx.Graph()
+
+    # Iterate through 1 to 5 edges away from the given node_id
+    for i in range(1, number_of_edges + 1):
+        # Get the nodes at the current distance (i) from the given node_id
+        current_level_nodes = nx.single_source_shortest_path_length(graph, node_id, cutoff=i)
+        current_level_nodes = {node: dist for node, dist in current_level_nodes.items() if dist == i}
+        # If the current distance is 1, add nodes and edges to the one_edge_away graph
+        if i == 1:
+            one_edge_away.add_nodes_from([(node, graph.nodes[node]) for node in current_level_nodes])
+            one_edge_away.add_edges_from([(node_id, neighbor) for neighbor in current_level_nodes])
+        elif 1 < i <= number_of_edges:
+            two_to_n_edges_away.add_nodes_from([(node, graph.nodes[node]) for node in current_level_nodes])
+            two_to_n_edges_away.add_edges_from([(node_id, neighbor) for neighbor in current_level_nodes])
+    return one_edge_away, two_to_n_edges_away
 
 def get_search_result_subgraph(graph, string_to_search_for, n):
     node_results = search_network(graph, string_to_search_for)
     if node_results:
         sub_graph = get_subgraph_within_n_steps(graph, node_results, n)
-        return sub_graph
+        return sub_graph, node_results
     else:
         st.write("No results found for '{}'. Displaying full graph".format(string_to_search_for))
-        return graph
+        return graph, None
 
 def queue(a, b, qty):
     """either x0 and x1 or y0 and y1, qty of points to create"""
@@ -148,7 +190,6 @@ def queue(a, b, qty):
             q.append((left, center))
             q.append((center, right))
     return pts
-
 
 def make_middle_points(first_x, last_x, first_y, last_y, qty):
     """line segment end points, how many midpoints, hovertext"""
@@ -239,7 +280,7 @@ def create_network_graph(G, display_legend=True, layout='Spring'):
     m2node_trace = go.Scatter(x=edge_middle_x, y=edge_middle_y, mode="markers", showlegend=False,
                               hovertemplate="%{hovertext}",
                               hovertext=edge_middle_text,
-                              marker=go.Marker(opacity=EDGE_POINTS_OPACITY))
+                              marker=go.scatter.Marker(opacity=EDGE_POINTS_OPACITY))
     node_x = [pos[node][0] for node in G.nodes()]
     node_y = [pos[node][1] for node in G.nodes()]
     node_labels = ['<br>'.join(f'{key}: {value}' for key, value in G.nodes[node].items()) for node in G.nodes()]
@@ -285,7 +326,7 @@ def create_network_graph(G, display_legend=True, layout='Spring'):
     for trace in node_trace.data:
         trace.update(dict(mode='markers', marker=dict(size=10, line_width=2), hovertemplate='%{text}'))
 
-    fig = go.Figure(data=[edge_trace, m2node_trace] + list(node_trace.data),
+    figure = go.Figure(data=[edge_trace, m2node_trace] + list(node_trace.data),
                     layout=go.Layout(
                         showlegend=display_legend,
                         hovermode='closest',
@@ -300,4 +341,4 @@ def create_network_graph(G, display_legend=True, layout='Spring'):
                             itemdoubleclick="toggle"
                         )
                     ))
-    return fig
+    return figure
