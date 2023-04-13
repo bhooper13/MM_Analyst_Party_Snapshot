@@ -56,20 +56,21 @@ network_graph = nx_util.create_network_graph(G, show_legend, layout_option)
 
 #previous way to plot graph, no click interaction
 st.plotly_chart(network_graph, use_container_width=True)
-generate_col, export_col2 = st.columns([1, 1])
-with generate_col:
-    if st.button("Generate Results as PowerPoint"):
-        #export network_graph as image
-        pio.write_image(network_graph, 'figure.png', width=425, height=425)
-        # network_graph.write_image("fig1.png")
-        # ppt_util.close_specific_ppt_file(f"{search_value}_mortal_mint_snapshot.pptx")
-        # time.sleep(1)
-        pptx_io=ppt_util.export_to_powerpoint(G, search_value)
-        # st.write(os.listdir("."))
-        with export_col2:
-            st.download_button("Download PowerPoint file", pptx_io,
-                               file_name=f"{search_value}_mortal_mint_snapshot.pptx",
-                               mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+if search_value:
+    generate_col, export_col2 = st.columns([1, 1])
+    with generate_col:
+        if st.button("Generate Results as PowerPoint"):
+            #export network_graph as image
+            pio.write_image(network_graph, 'figure.png', width=425, height=425)
+            # network_graph.write_image("fig1.png")
+            # ppt_util.close_specific_ppt_file(f"{search_value}_mortal_mint_snapshot.pptx")
+            # time.sleep(1)
+            pptx_io=ppt_util.export_to_powerpoint(G, search_value)
+            # st.write(os.listdir("."))
+            with export_col2:
+                st.download_button("Download PowerPoint file", pptx_io,
+                                   file_name=f"{search_value}_mortal_mint_snapshot.pptx",
+                                   mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
 if search_value:
     if len(node_search_results_list)>1:
         selected_node=st.selectbox("Select Node to focus on", node_search_results_list)
