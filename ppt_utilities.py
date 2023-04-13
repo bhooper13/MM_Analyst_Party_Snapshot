@@ -130,5 +130,10 @@ def export_to_powerpoint(graph, search_value):
     # subtitle = image_slide.shapes[1]
     # sp = subtitle.element
     # sp.getparent().remove(sp)
-    prs.save(f"{search_value}_mortal_mint_snapshot.pptx")
+    # prs.save(f"{search_value}_mortal_mint_snapshot.pptx")
+    pptx_io = BytesIO()
+    prs.save(pptx_io)
+    pptx_io.seek(0)
+
+    return pptx_io
     # open_specific_ppt_file(f"{search_value}_mortal_mint_snapshot.pptx")

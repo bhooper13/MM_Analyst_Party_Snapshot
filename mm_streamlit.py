@@ -62,9 +62,11 @@ if st.button("Export Results to PowerPoint"):
     # network_graph.write_image("fig1.png")
     # ppt_util.close_specific_ppt_file(f"{search_value}_mortal_mint_snapshot.pptx")
     # time.sleep(1)
-    ppt_util.export_to_powerpoint(G, search_value)
-    st.write(os.listdir("."))
-
+    pptx_io=ppt_util.export_to_powerpoint(G, search_value)
+    # st.write(os.listdir("."))
+    st.download_button("Download PowerPoint file", pptx_io,
+                       file_name=f"{search_value}_mortal_mint_snapshot.pptx",
+                       mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
 if search_value:
     if len(node_search_results_list)>1:
         selected_node=st.selectbox("Select Node to focus on", node_search_results_list)
