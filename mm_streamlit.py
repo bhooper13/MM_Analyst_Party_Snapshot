@@ -56,7 +56,7 @@ network_graph = nx_util.create_network_graph(G, show_legend, layout_option)
 
 #previous way to plot graph, no click interaction
 st.plotly_chart(network_graph, use_container_width=True)
-if st.button("Export Results to PowerPoint"):
+if st.button("Generate Results as PowerPoint"):
     #export network_graph as image
     pio.write_image(network_graph, 'figure.png', width=425, height=425)
     # network_graph.write_image("fig1.png")
